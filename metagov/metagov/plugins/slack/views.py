@@ -55,14 +55,12 @@ def oauth(request):
     #     }
     # }
 
-    # FIXME: what should happen? Enable Slack plugin for the given Metagov community?
-    # Metagov Community Slug should be included in the request state?
-
-    # community = Community.objects.get(...)
-    # config = {"team_id": team_id}
-    # Slack.objects.create(name="slack", community=community, config=config)
-
-    return HttpResponseRedirect(env("SLACK_AUTH_REDIRECT_URL"))
+    bot_token = response["access_token"]
+    team_id = response["team"]["id"]
+    team_name = response["team"]["name"]
+    # app_id = response["app_id"]
+    config = {"team_id": team_id, "bot_token": bot_token, "team_name": team_name}
+    return (env("SLACK_AUTH_REDIRECT_URL"), config)
 
 
 def process_event(request):

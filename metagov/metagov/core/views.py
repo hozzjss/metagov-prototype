@@ -11,6 +11,7 @@ from django.http import (
     HttpResponseBadRequest,
     HttpResponseNotFound,
     HttpResponseServerError,
+    HttpResponseRedirect,
     JsonResponse,
 )
 from django.shortcuts import render
@@ -128,7 +129,15 @@ def list_hooks(request, name):
     return JsonResponse({"hooks": hooks})
 
 
-def plugin_auth(request, plugin_name):
+def plugin_auth(request, plugin_name, community=None):
+    """
+    pass an oauth request to a plugin handler for it. the handler
+    returns a configured redirect url (?????) and a config object for the
+    new plugin instance to create.
+
+    is this transferable or does it only make sense for slack?
+    should this be completely left up to the plugin author? like, let plugin author define route and view entirely
+    """
     logger.info(">>>>plugin_auth")
     logger.info(request)
     logger.info(request.GET)
@@ -136,10 +145,23 @@ def plugin_auth(request, plugin_name):
     if not plugin_cls:
         return HttpResponseBadRequest(f"No such plugin: {plugin_name}")
 
+    community_inst = None
+    if community:
+        try:
+            community_inst = Community.objects.get(name=community)
+            # Lookup plugin
+            # plugin = get_plugin_instance(plugin_name, community)
+        except Community.DoesNotExist:
+            logger.error(f"No such community: {community}")
+
     # FIXME: register view
     from metagov.plugins.slack.views import oauth
 
-    return oauth(request)
+    redirect, config = oauth(request)
+    if community_inst:
+        logger.info(f"Creating plugin instance of {plugin_name} for {community_inst} with config {config}")
+        plugin_cls.objects.create(name=plugin_name, community=community_inst, config=config)
+    return HttpResponseRedirect(redirect)
 
 
 @swagger_auto_schema(**MetagovSchemas.list_actions)
