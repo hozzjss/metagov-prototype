@@ -127,6 +127,17 @@ def list_hooks(request, name):
             hooks.append(url)
     return JsonResponse({"hooks": hooks})
 
+def plugin_auth(request, plugin_name):
+    logger.info(">>>>plugin_auth")
+    logger.info(request)
+    logger.info(request.GET)
+    plugin_cls = plugin_registry.get(plugin_name)
+    if not plugin_cls:
+        return HttpResponseBadRequest(f"No such plugin: {plugin_name}")
+
+    #TODO register view somehow
+    from metagov.plugins.slack.views import oauth
+    return oauth(request)
 
 @swagger_auto_schema(**MetagovSchemas.list_actions)
 @api_view(["GET"])
@@ -242,6 +253,40 @@ def receive_webhook(request, community, plugin_name, webhook_slug=None):
                 process.receive_webhook(request)
             except Exception as e:
                 logger.error(e)
+
+    return HttpResponse()
+
+@csrf_exempt
+@swagger_auto_schema(method="post", auto_schema=None)
+@api_view(["POST"])
+def receive_webhook_global(request, plugin_name):
+    """
+    API endpoint for receiving webhook requests from external services.
+    For plugins that receive events for multiple communities... like Slack
+    """
+
+    plugin_cls = plugin_registry[plugin_name]
+    if plugin_cls._webhook_receiver_function:
+        #FIXME: process the event and decide which instance to send it to!
+        for plugin in plugin_cls.objects.all():
+            webhook_receiver = getattr(plugin, plugin_cls._webhook_receiver_function)
+            logger.info(f"Passing webhook request to: {plugin}")
+            try:
+                webhook_receiver(request)
+            except Exception as e:
+                logger.error(f"Plugin '{plugin}' failed to process webhook: {e}")
+
+    # # Call `receive_webhook` on each of the GovernanceProcess proxy models
+    # proxy_models = plugin_cls._process_registry.values()
+    # for cls in proxy_models:
+    #     processes = cls.objects.filter(plugin=plugin, status=ProcessStatus.PENDING.value)
+    #     logger.info(f"{processes.count()} pending processes for plugin instance '{plugin}'")
+    #     for process in processes:
+    #         logger.info(f"Passing webhook request to: {process}")
+    #         try:
+    #             process.receive_webhook(request)
+    #         except Exception as e:
+    #             logger.error(e)
 
     return HttpResponse()
 

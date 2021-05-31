@@ -85,6 +85,8 @@ urlpatterns = [
         views.receive_webhook,
         name="receive_webhook",
     ),
+    path("api/hooks/<slug:plugin_name>", views.receive_webhook_global, name="receive_webhook_global"),
+    path("api/auth/<slug:plugin_name>", views.plugin_auth, name="plugin_auth"),
     path(
         f"{utils.internal_path}/plugin-schemas",
         views.plugin_config_schemas,
