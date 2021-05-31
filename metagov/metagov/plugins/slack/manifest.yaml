@@ -1,0 +1,96 @@
+_metadata:
+  major_version: 1
+  minor_version: 1
+display_information:
+  name: Metagov
+features:
+  bot_user:
+    display_name: Metagov
+    always_online: true
+oauth_config:
+  redirect_urls:
+    - https://prototype.metagov.org/api/auth/slack
+  scopes:
+    bot:
+      - app_mentions:read
+      - calls:read
+      - calls:write
+      - channels:history
+      - channels:join
+      - channels:manage
+      - channels:read
+      - chat:write
+      - chat:write.customize
+      - chat:write.public
+      - commands
+      - dnd:read
+      - emoji:read
+      - files:read
+      # - files:write
+      - groups:history
+      - groups:read
+      - groups:write
+      - im:history
+      - im:read
+      - im:write
+      - incoming-webhook
+      - links:read
+      - links:write
+      - mpim:history
+      - mpim:read
+      - mpim:write
+      - pins:read
+      - pins:write
+      - reactions:read
+      - reactions:write
+      # - reminders:read
+      # - reminders:write
+      # - remote_files:read
+      # - remote_files:share
+      # - remote_files:write
+      - team:read
+      - usergroups:read
+      - usergroups:write
+      - users.profile:read
+      - users:read
+      - users:read.email
+      - users:write
+      # - workflow.steps:execute
+settings:
+  event_subscriptions:
+    request_url: https://prototype.metagov.org/api/hooks/slack
+    # user_events:
+    #   - channel_rename
+    #   - member_joined_channel
+    #   - message.channels
+    #   - reaction_added
+    bot_events:
+      - app_home_opened
+      - app_mention
+      # - app_requested
+      - app_uninstalled
+      - call_rejected
+      - channel_archive
+      - channel_created
+      - channel_deleted
+      - channel_id_changed
+      - channel_rename
+      - channel_unarchive
+      - email_domain_changed
+      - group_archive
+      - group_deleted
+      - group_unarchive
+      - group_rename
+      # - invite_requested
+      - member_joined_channel
+      - member_left_channel
+      - message.channels
+      - pin_added
+      - pin_removed
+      - reaction_added
+      - reaction_removed
+      # - star_added
+      # - star_removed
+      - team_domain_change
+      - team_rename
+      - user_change
