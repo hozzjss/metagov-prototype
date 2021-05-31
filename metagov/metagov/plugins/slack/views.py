@@ -1,5 +1,7 @@
 import logging
+import json
 
+from django.http.response import HttpResponse
 import environ
 import requests
 from django.http import HttpResponseRedirect
@@ -69,3 +71,22 @@ def oauth(request):
     # Slack.objects.create(name="slack", community=community, config=config)
 
     return HttpResponseRedirect(env("SLACK_AUTH_REDIRECT_URL"))
+
+def process_event(request):
+    logger.info("received event")
+    json_data = json.loads(request.body)
+    logger.info(json_data)
+
+    if json_data["type"] == "url_verification":
+        challenge = json_data.get("challenge")
+        return HttpResponse(challenge)
+
+    if json_data["type"] == "app_rate_limited":
+        logger.error("Slack app rate limited")
+        return HttpResponse()
+
+    if json_data["type"] != "event_callback":
+        for plugin in Slack.objects.all():
+            #fixme..... let plugin define request routing, but pass control back to core
+            plugin.receive_event(request)
+    return HttpResponse()

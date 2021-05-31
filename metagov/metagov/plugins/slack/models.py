@@ -53,16 +53,16 @@ class Slack(Plugin):
         json_data = json.loads(request.body)
         logger.info(json_data)
 
-        if json_data["type"] == "url_verification":
-            challenge = json_data.get("challenge")
-            return HttpResponse(challenge)
+        # if json_data["type"] == "url_verification":
+        #     challenge = json_data.get("challenge")
+        #     return HttpResponse(challenge)
 
-        if json_data["type"] == "app_rate_limited":
-            logger.error("Slack app rate limited")
-            return HttpResponse()
+        # if json_data["type"] == "app_rate_limited":
+        #     logger.error("Slack app rate limited")
+        #     return HttpResponse()
 
         if json_data["type"] != "event_callback":
-            return HttpResponse()
+            return
 
         # https://api.slack.com/apis/connections/events-api#the-events-api__receiving-events__events-dispatched-as-json
 
