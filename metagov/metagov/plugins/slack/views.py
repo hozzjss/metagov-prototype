@@ -22,14 +22,9 @@ def oauth(request):
     environ.Env.read_env()
     code = request.GET.get("code")
     state = request.GET.get("state")
-    logger.info(code)
-    logger.info(state)
-
-    # curl -F code=1234 -F client_id=3336676.569200954261 -F client_secret=ABCDEFGH https://slack.com/api/oauth.v2.access
-
+    logger.info(f"code: {code}, state: {state}")
     data = {"client_id": env("SLACK_CLIENT_ID"), "client_secret": env("SLACK_CLIENT_SECRET"), "code": code}
-    logger.info(data)
-    resp = requests.get("https://slack.com/api/oauth.v2.access", data=data)
+    resp = requests.post("https://slack.com/api/oauth.v2.access", data=data)
     if not resp.ok:
         raise PluginErrorInternal(f"Slack auth failed: {resp.status_code} {resp.reason}")
     response = resp.json()
@@ -69,6 +64,7 @@ def oauth(request):
 
     return HttpResponseRedirect(env("SLACK_AUTH_REDIRECT_URL"))
 
+
 def process_event(request):
     logger.info("received event")
     json_data = json.loads(request.body)
@@ -84,6 +80,6 @@ def process_event(request):
 
     if json_data["type"] != "event_callback":
         for plugin in Slack.objects.all():
-            #fixme..... let plugin define request routing, but pass control back to core
+            # fixme..... let plugin define request routing, but pass control back to core
             plugin.receive_event(request)
     return HttpResponse()
