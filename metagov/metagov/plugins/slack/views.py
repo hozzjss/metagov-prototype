@@ -4,6 +4,7 @@ import environ
 import requests
 from django.http import HttpResponseRedirect
 from metagov.core.errors import PluginErrorInternal
+from metagov.plugins.slack.models import Slack
 
 logger = logging.getLogger(__name__)
 
@@ -62,4 +63,9 @@ def oauth(request):
 
     # FIXME: what should happen? Enable Slack plugin for the given Metagov community?
     # Metagov Community Slug should be included in the request state?
+
+    # community = Community.objects.get(...)
+    # config = {"team_id": team_id}
+    # Slack.objects.create(name="slack", community=community, config=config)
+
     return HttpResponseRedirect(env("SLACK_AUTH_REDIRECT_URL"))
