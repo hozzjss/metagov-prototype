@@ -20,8 +20,6 @@ def oauth(request):
     logger.info(">>> Slack plugin processing auth request:")
     env = environ.Env()
     environ.Env.read_env()
-    logger.info(env("SLACK_CLIENT_ID"))
-
     code = request.GET.get("code")
     state = request.GET.get("state")
     logger.info(code)
@@ -30,15 +28,14 @@ def oauth(request):
     # curl -F code=1234 -F client_id=3336676.569200954261 -F client_secret=ABCDEFGH https://slack.com/api/oauth.v2.access
 
     data = {"client_id": env("SLACK_CLIENT_ID"), "client_secret": env("SLACK_CLIENT_SECRET"), "code": code}
+    logger.info(data)
     resp = requests.get("https://slack.com/api/oauth.v2.access", data=data)
     if not resp.ok:
-        logger.error(f"Slack oauth with {resp.status_code} {resp.reason}")
-        raise PluginErrorInternal(resp.text)
+        raise PluginErrorInternal(f"Slack auth failed: {resp.status_code} {resp.reason}")
     response = resp.json()
     logger.info(response)
     if not response["ok"]:
-        logger.error(response)
-        raise PluginErrorInternal("Slack oauth failed")
+        raise PluginErrorInternal(f"Slack auth failed: {response['error']}")
 
     # {
     #     "ok": true,
