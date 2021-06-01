@@ -4,7 +4,6 @@ import json
 from django.http.response import HttpResponse
 import environ
 import requests
-from django.http import HttpResponseRedirect
 from metagov.core.errors import PluginErrorInternal
 from metagov.plugins.slack.models import Slack
 
@@ -13,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 def oauth(request):
     """
-
     https://api.slack.com/authentication/oauth-v2#exchanging
-
     """
     logger.info(">>> Slack plugin processing auth request:")
     env = environ.Env()
@@ -28,7 +25,6 @@ def oauth(request):
     if not resp.ok:
         raise PluginErrorInternal(f"Slack auth failed: {resp.status_code} {resp.reason}")
     response = resp.json()
-    logger.info(response)
     if not response["ok"]:
         raise PluginErrorInternal(f"Slack auth failed: {response['error']}")
 
@@ -68,18 +64,14 @@ def oauth(request):
 
 
 def process_event(request):
-    logger.info("received event")
+    logger.info("received event from slack")
     json_data = json.loads(request.body)
-    logger.info(json_data)
-
     if json_data["type"] == "url_verification":
         challenge = json_data.get("challenge")
         return HttpResponse(challenge)
-
     if json_data["type"] == "app_rate_limited":
         logger.error("Slack app rate limited")
         return HttpResponse()
-
     if json_data["type"] != "event_callback":
         for plugin in Slack.objects.all():
             # fixme..... let plugin define request routing, but pass control back to core

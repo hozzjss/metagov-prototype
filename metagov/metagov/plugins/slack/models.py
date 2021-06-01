@@ -6,8 +6,6 @@ import requests
 from metagov.core.errors import PluginErrorInternal
 from metagov.core.models import Plugin
 
-from django.http import HttpResponse
-
 logger = logging.getLogger(__name__)
 
 """
@@ -41,7 +39,7 @@ class Slack(Plugin):
         proxy = True
 
     def initialize(self):
-        logger.info(">>>>>>>> initializing slack")
+        logger.info(f"Initializing Slack Plugin for {self.community}")
         logger.info(self.config["team_name"])
 
     # PLATFORM ACTIONS:
@@ -55,34 +53,15 @@ class Slack(Plugin):
 
     @Registry.webhook_receiver(event_schemas=[])
     def receive_event(self, request):
-        logger.info("received event")
         json_data = json.loads(request.body)
-        logger.info(json_data)
-
-        # if json_data["type"] == "url_verification":
-        #     challenge = json_data.get("challenge")
-        #     return HttpResponse(challenge)
-
-        # if json_data["type"] == "app_rate_limited":
-        #     logger.error("Slack app rate limited")
-        #     return HttpResponse()
-
         if json_data["type"] != "event_callback":
             return
 
-        # https://api.slack.com/apis/connections/events-api#the-events-api__receiving-events__events-dispatched-as-json
-
-        # validate the request:
-
-        # The unique identifier for the workspace/team where this event occurred.
-        team_id = json_data["team_id"]
-        # The shared-private callback token that authenticates this callback to the application as having come from Slack. Match this against what you were given when the subscription was created. If it does not match, do not process the event and discard it.
-        token = json_data["token"]
-        # The unique identifier for the application this event is intended for. Your application's ID can be found in the URL of the your application console. If your Request URL manages multiple applications, use this field along with the token field to validate and route incoming requests.
-        api_app_id = json_data["api_app_id"]
-        logger.info(f"Team id: {team_id}")
-        if team_id is not self.config["team_id"]:
+        # TODO: move this check to a separate handler for routing incoming events to the correct plugin instance
+        if json_data["team_id"] != self.config["team_id"]:
             return
+
+        # https://api.slack.com/apis/connections/events-api#the-events-api__receiving-events__events-dispatched-as-json
 
         # authorizations = json_data["authorizations"]
         # event_context = json_data["event_context"]
@@ -94,7 +73,59 @@ class Slack(Plugin):
         event = json_data["event"]
 
         # https://api.slack.com/events
-        event_type = event["event_type"]
-        # if event_type == "..."
+        event_type = event["type"]
+        logger.info(f"Received event {event_type}")
+        logger.info(str(json_data["token"] == self.config["bot_token"]))
+        if event_type == "channel_rename":
+            pass
+        elif event_type == "message":
+            logger.info(event["subtype"])
+        elif event_type == "member_joined_channel":
+            pass
+        elif event_type == "pin_added":
+            pass
+        elif event_type == "reaction_added":
+            pass
+        elif event_type == "reaction_removed":
+            pass
 
-        # "is policykit bot action"
+        # can check if this is a bot action- special flag for that ?
+
+    @Registry.action(slug="pin-message", description="Pin a message")
+    def pin(self, parameters):
+        data = {
+            "token": self.config["bot_token"],
+            "channel": parameters["channel"],
+            "timestamp": parameters["timestamp"],  # unique ts of the message to pin
+        }
+        return self.slack_request("POST", "pins.add", data=data)
+
+    @Registry.action(slug="unpin-message", description="Unpin a message")
+    def unpin(self, parameters):
+        data = {
+            "token": self.config["bot_token"],
+            "channel": parameters["channel"],
+            "timestamp": parameters["timestamp"],  # unique ts of the message to unpin
+        }
+        return self.slack_request("POST", "pins.remove", data=data)
+
+    @Registry.action(slug="method", description="Perform any Slack method (provided sufficient scopes)")
+    def method(self, parameters):
+        """
+        Catch-all action for any method in https://api.slack.com/methods
+        See: https://api.slack.com/web#basics
+        """
+        data = {"token": self.config["bot_token"], **parameters}
+        return self.slack_request("POST", "pins.remove", data=data)
+
+    def slack_request(self, method, route, json=None, data=None):
+        url = f"https://slack.com/api/{route}"
+        logger.info(f"{method} {url}")
+        resp = requests.request(method, url, json=json, data=data)
+        if not resp.ok:
+            logger.error(f"{resp.status_code} {resp.reason}")
+            logger.error(resp.request.body)
+            raise PluginErrorInternal(resp.text)
+        if resp.content:
+            return resp.json()
+        return None

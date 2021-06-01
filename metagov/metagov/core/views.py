@@ -301,7 +301,7 @@ def receive_webhook_global(request, plugin_name):
 
     # FIXME: register view!!!!
     from metagov.plugins.slack.views import process_event
-
+    # FIXME: each plugin  can define a global handler for routing request to unique id
     return process_event(request)
 
     # plugin_cls = plugin_registry[plugin_name]
