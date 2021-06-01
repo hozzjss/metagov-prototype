@@ -28,8 +28,13 @@ class Slack(Plugin):
     config_schema = {
         "type": "object",
         "additionalProperties": False,
-        "properties": {"team_id": {"description": "Slack Team ID", "type": "string"}},
-        "required": ["team_id"],
+        "properties": {
+            # these are set automatically if using the oauth flow
+            "team_id": {"description": "Slack Team ID", "type": "string"},
+            "team_name": {"description": "Slack Team Name", "type": "string"},
+            "bot_token": {"description": "Bot Token", "type": "string"},
+            "bot_user_id": {"description": "Bot User ID", "type": "string"},
+        },
     }
 
     class Meta:
@@ -37,6 +42,7 @@ class Slack(Plugin):
 
     def initialize(self):
         logger.info(">>>>>>>> initializing slack")
+        logger.info(self.config["team_name"])
 
     # PLATFORM ACTIONS:
     # TODO: post message

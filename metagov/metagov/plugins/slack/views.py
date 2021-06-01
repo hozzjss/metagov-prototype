@@ -55,11 +55,15 @@ def oauth(request):
     #     }
     # }
 
-    bot_token = response["access_token"]
-    team_id = response["team"]["id"]
-    team_name = response["team"]["name"]
     # app_id = response["app_id"]
-    config = {"team_id": team_id, "bot_token": bot_token, "team_name": team_name}
+    if response["token_type"] != "bot":
+        raise PluginErrorInternal("Expected token_type bot")
+    config = {
+        "team_id": response["team"]["id"],
+        "team_name": response["team"]["name"],
+        "bot_token": response["access_token"],
+        "bot_user_id": response["bot_user_id"],
+    }
     return (env("SLACK_AUTH_REDIRECT_URL"), config)
 
 
