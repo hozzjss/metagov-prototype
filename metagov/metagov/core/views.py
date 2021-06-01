@@ -145,14 +145,21 @@ def plugin_auth(request, plugin_name, community=None):
     if not plugin_cls:
         return HttpResponseBadRequest(f"No such plugin: {plugin_name}")
 
+    state = request.GET.get("state")
     community_inst = None
-    if community:
-        try:
-            community_inst = Community.objects.get(name=community)
-            # Lookup plugin
-            # plugin = get_plugin_instance(plugin_name, community)
-        except Community.DoesNotExist:
-            logger.error(f"No such community: {community}")
+    if state:
+        import base64
+
+        state_obj = json.loads(base64.b64decode(state).decode("ascii"))
+        logger.info(state_obj)
+        community_slug = state_obj.get("community")
+        if community_slug:
+            try:
+                community_inst = Community.objects.get(name=community_slug)
+                # Lookup plugin
+                # plugin = get_plugin_instance(plugin_name, community)
+            except Community.DoesNotExist:
+                logger.error(f"No such community: {community_slug}")
 
     # FIXME: register view
     from metagov.plugins.slack.views import oauth
